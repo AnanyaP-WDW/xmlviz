@@ -20,9 +20,9 @@ setup(
     description="A tool for analyzing, comparing, and visualizing Tableau .twb files",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="TwbCompare Team",
-    author_email="example@example.com",
-    url="https://github.com/twbcompare/twbcompare",
+    author="Ananya Pathak",
+    author_email="ananya@synciq.ai",
+    url="https://github.com/AnanyaP-WDW/xmlviz",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
