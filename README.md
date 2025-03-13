@@ -1,69 +1,58 @@
-# TwbCompare
+# TWBCompare
 
-A tool for analyzing, comparing, and visualizing Tableau .twb files. It helps identify structural similarities between workbooks and creates cluster visualizations.
+A command-line tool for analyzing, comparing, and visualizing Tableau workbook (.twb) files.
 
 ## Features
 
-- Analyzes multiple Tableau workbook (.twb) files
-- Identifies common structures and patterns
-- Creates interactive cluster visualizations
-- Generates common TWB files for all files and each cluster
-- Provides detailed reports of commonalities
+TWBCompare helps you:
+
+1. Convert multiple Tableau .twb files (XML format) to JSON for easier analysis
+2. Find common tags, attributes, and hierarchies across multiple .twb files
+3. Generate diffs to see what's unique in each .twb file compared to the common structure
 
 ## Installation
 
-1. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Unix/macOS
-# or
-.\venv\Scripts\activate  # On Windows
-```
+Since this tool is set up in a virtual environment, you can install it in development mode:
 
-2. Install the required packages:
 ```bash
-pip install pandas plotly numpy matplotlib scikit-learn
+# Activate the virtual environment
+source venv/bin/activate
+
+# Install in development mode
 pip install -e .
 ```
 
 ## Usage
 
-Basic usage:
+The basic usage is:
+
 ```bash
-source venv/bin/activate && twbcompare /path/to/twb/files --output-dir output_directory
+twbcompare /path/to/twb/files --output-dir twbcompare_results
 ```
 
-Example:
+### Arguments
+
+- `input_dir` (required): Directory containing .twb files to analyze
+- `--output-dir` (optional): Directory to save results (default: "twbcompare_results")
+
+### Example
+
 ```bash
-source venv/bin/activate && twbcompare /Users/username/Desktop/twb_files --output-dir twbcompare_results
+twbcompare /Users/ananyapathak/Desktop/PBI --output-dir twbcompare_results
 ```
 
-### Options
+## Output
 
-- `--output-dir`: Directory for output files (default: twbcompare_output)
-- `--n-clusters`: Number of clusters to create (default: 3)
-- `--threshold`: Minimum frequency threshold for commonality (0.0-1.0, default: 1.0)
-- `--placeholders`: Use placeholder values in generated TWB files
-- `--verbose`: Enable detailed logging
+The tool generates:
 
-### Output Files
+1. JSON versions of each .twb file in the output directory
+2. A `common-twb.json` file with common elements across all files
+3. Diff files for each .twb file showing what's unique compared to the common elements
 
-The tool generates the following outputs:
+## Requirements
 
-1. Common TWB file for all input files:
-   - `output_directory/common.twb`
-
-2. Interactive cluster visualization:
-   - `output_directory/clusters/clusters.html`
-
-3. For each cluster X:
-   - `output_directory/clusters/cluster_X/cluster_X_common.twb` - Common TWB file
-   - `output_directory/clusters/cluster_X/report.txt` - Cluster report
-
-4. Comparison visualizations:
-   - `output_directory/clusters/comparisons/cluster_comparison.png`
-   - `output_directory/clusters/comparisons/depth_distribution.png`
+- Python 3.6+
 
 ## License
 
-[MIT License](LICENSE) 
+MIT 
