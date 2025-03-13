@@ -6,12 +6,7 @@ import sys
 import argparse
 from typing import List, Optional
 
-from twbcompare.utils.parser import convert_all_twb_files
-from twbcompare.utils.analyzer import (
-    find_common_elements,
-    save_common_elements,
-    save_diff_files
-)
+from twbcompare.utils.xml_analyzer import find_common_twb_structure
 
 
 def main(args: Optional[List[str]] = None) -> int:
@@ -53,27 +48,17 @@ def main(args: Optional[List[str]] = None) -> int:
             print(f"Error: Input directory '{input_dir}' does not exist or is not a directory")
             return 1
         
-        # Step 1: Convert all TWB files to JSON
-        print(f"Converting .twb files from '{input_dir}' to JSON...")
-        json_files = convert_all_twb_files(input_dir, output_dir)
+        # Process all TWB files directly as XML
+        print(f"Processing .twb files from '{input_dir}'...")
         
-        if not json_files:
+        # Find common structure and generate diffs
+        common_file, diff_files = find_common_twb_structure(input_dir, output_dir)
+        
+        if not diff_files:
             print(f"No .twb files found in '{input_dir}'")
             return 1
         
-        print(f"Converted {len(json_files)} .twb files to JSON")
-        
-        # Step 2: Find common elements
-        print("Finding common elements across all .twb files...")
-        common_elements = find_common_elements(json_files)
-        
-        # Save common elements
-        common_file = save_common_elements(common_elements, output_dir)
-        print(f"Saved common elements to '{common_file}'")
-        
-        # Step 3: Generate diff files
-        print("Generating diff files...")
-        diff_files = save_diff_files(json_files, common_elements, output_dir)
+        print(f"Saved common structure to '{common_file}'")
         print(f"Generated {len(diff_files)} diff files")
         
         print(f"\nAll results saved to '{output_dir}'")

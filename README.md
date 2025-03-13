@@ -1,18 +1,19 @@
 # TWBCompare
 
-A command-line tool for analyzing, comparing, and visualizing Tableau workbook (.twb) files.
+A command-line tool for analyzing and comparing Tableau workbook (.twb) files directly as XML.
 
 ## Features
 
 TWBCompare helps you:
 
-1. Convert multiple Tableau .twb files (XML format) to JSON for easier analysis
-2. Find common tags, attributes, and hierarchies across multiple .twb files
-3. Generate diffs to see what's unique in each .twb file compared to the common structure
+1. Analyze multiple Tableau .twb files directly in their native XML format
+2. Find common XML elements, attributes, and hierarchies across multiple .twb files
+3. Generate a common XML structure that represents elements present in all files
+4. Generate diffs to see what's unique in each .twb file compared to the common structure
 
 ## Installation
 
-Since this tool is set up in a virtual environment, you can install it in development mode:
+You can install the package in development mode:
 
 ```bash
 # Activate the virtual environment
@@ -45,13 +46,23 @@ twbcompare /Users/ananyapathak/Desktop/PBI --output-dir twbcompare_results
 
 The tool generates:
 
-1. JSON versions of each .twb file in the output directory
-2. A `common-twb.json` file with common elements across all files
-3. Diff files for each .twb file showing what's unique compared to the common elements
+1. A `common-twb.xml` file containing the common structure across all files
+2. XML diff files for each .twb file showing what's unique compared to the common structure
+
+## How It Works
+
+TWBCompare uses a recursive algorithm to find the common structure across all TWB files:
+
+1. It parses all TWB files as XML directly using ElementTree
+2. Starting with the first file as a base, it iteratively compares with other files
+3. For each comparison, it keeps only the elements and attributes that match across files
+4. The algorithm handles nested structures by recursively comparing children
+5. After finding the common structure, it generates diff files by comparing each original file with the common structure
 
 ## Requirements
 
 - Python 3.6+
+- lxml 4.6.0+
 
 ## License
 

@@ -5,10 +5,13 @@ from setuptools import setup, find_packages
 
 setup(
     name="twbcompare",
-    version="0.1.0",
+    version="0.2.0",
     description="A tool for analyzing and comparing Tableau .twb files",
     author="TWBCompare Team",
     packages=find_packages(),
+    install_requires=[
+        "lxml>=4.6.0",
+    ],
     entry_points={
         "console_scripts": [
             "twbcompare=twbcompare.cli:main",
