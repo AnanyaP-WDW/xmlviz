@@ -64,12 +64,50 @@ def compare_elements(elem1: ET.Element, elem2: ET.Element) -> bool:
     return elem1.attrib == elem2.attrib
 
 
-def find_common_structure(xml_trees: List[ET.ElementTree]) -> Optional[ET.Element]:
+def collect_element_frequencies(xml_trees: List[ET.ElementTree]) -> Dict[Tuple[str, frozenset], int]:
+    """
+    Collect frequency statistics for elements across all XML trees.
+    
+    Args:
+        xml_trees: List of XML ElementTree objects
+        
+    Returns:
+        Dictionary mapping element signatures to their frequency counts
+    """
+    element_counts = defaultdict(int)
+    
+    # Process each tree
+    for tree in xml_trees:
+        root = tree.getroot()
+        _collect_element_recursive(root, element_counts)
+    
+    return element_counts
+
+
+def _collect_element_recursive(element: ET.Element, counts: Dict[Tuple[str, frozenset], int]) -> None:
+    """
+    Recursively collect element frequency statistics.
+    
+    Args:
+        element: Current XML element
+        counts: Dictionary to store counts
+    """
+    # Count this element
+    sig = element_signature(element)
+    counts[sig] += 1
+    
+    # Process all children
+    for child in element:
+        _collect_element_recursive(child, counts)
+
+
+def find_common_structure(xml_trees: List[ET.ElementTree], threshold: float = 1.0) -> Optional[ET.Element]:
     """
     Find the common structure across all XML trees.
     
     Args:
         xml_trees: List of XML ElementTree objects
+        threshold: Proportion (0.0-1.0) of trees that must contain an element for it to be considered common
         
     Returns:
         Element representing the common structure, or None if none exists
@@ -77,11 +115,18 @@ def find_common_structure(xml_trees: List[ET.ElementTree]) -> Optional[ET.Elemen
     if not xml_trees:
         return None
     
+    # Calculate the required count based on threshold
+    total_trees = len(xml_trees)
+    required_count = max(1, int(threshold * total_trees))
+    
+    # First pass: collect frequency statistics
+    element_counts = collect_element_frequencies(xml_trees)
+    
     # Start with the first tree as the base
     base_root = xml_trees[0].getroot()
     common_root = copy.deepcopy(base_root)
     
-    # Compare with each other tree
+    # Second pass: compare with each other tree
     for tree in xml_trees[1:]:
         root = tree.getroot()
         
@@ -100,19 +145,23 @@ def find_common_structure(xml_trees: List[ET.ElementTree]) -> Optional[ET.Elemen
         for key, value in common_attrs.items():
             common_root.attrib[key] = value
         
-        # Process children recursively
-        common_root = process_children_recursively(common_root, root)
+        # Process children recursively with frequency information
+        common_root = process_children_recursively_with_counts(common_root, root, element_counts, required_count)
     
     return common_root
 
 
-def process_children_recursively(common_elem: ET.Element, compare_elem: ET.Element) -> ET.Element:
+def process_children_recursively_with_counts(common_elem: ET.Element, compare_elem: ET.Element, 
+                                            element_counts: Dict[Tuple[str, frozenset], int],
+                                            required_count: int) -> ET.Element:
     """
-    Process children of elements recursively to find common structure.
+    Process children of elements recursively to find common structure using frequency counts.
     
     Args:
         common_elem: Current common element being built
         compare_elem: Element to compare against
+        element_counts: Dictionary of element frequency counts
+        required_count: Minimum number of trees required to keep an element
         
     Returns:
         Updated common element with only common children/structure
@@ -137,17 +186,24 @@ def process_children_recursively(common_elem: ET.Element, compare_elem: ET.Eleme
     for common_child in common_elem:
         common_sig = element_signature(common_child)
         
-        # If this signature exists in compare element
-        if common_sig in compare_children_map and compare_children_map[common_sig]:
-            # Get a matching child (and remove it to handle duplicates)
-            compare_child = compare_children_map[common_sig].pop(0)
-            
-            # Recursively process this child
-            new_child = process_children_recursively(common_child, compare_child)
-            
-            # Only add if the child has any content (tag, attributes, or sub-elements)
-            if new_child.tag or new_child.attrib or len(new_child) > 0:
-                new_common.append(new_child)
+        # Check if this element meets the threshold requirement
+        if element_counts[common_sig] >= required_count:
+            # If this signature exists in compare element
+            if common_sig in compare_children_map and compare_children_map[common_sig]:
+                # Get a matching child (and remove it to handle duplicates)
+                compare_child = compare_children_map[common_sig].pop(0)
+                
+                # Recursively process this child
+                new_child = process_children_recursively_with_counts(
+                    common_child, compare_child, element_counts, required_count
+                )
+                
+                # Only add if the child has any content (tag, attributes, or sub-elements)
+                if new_child.tag or new_child.attrib or len(new_child) > 0:
+                    new_common.append(new_child)
+            else:
+                # Element is not in this file but meets the threshold overall
+                new_common.append(copy.deepcopy(common_child))
     
     return new_common
 
@@ -251,13 +307,14 @@ def save_xml_tree(root: ET.Element, file_path: str) -> str:
     return file_path
 
 
-def find_common_twb_structure(input_dir: str, output_dir: str) -> Tuple[str, List[str]]:
+def find_common_twb_structure(input_dir: str, output_dir: str, threshold: float = 1.0) -> Tuple[str, List[str]]:
     """
     Find the common structure across all TWB files and generate diff files.
     
     Args:
         input_dir: Directory containing TWB files
         output_dir: Directory to save results
+        threshold: Proportion (0.0-1.0) of files that must contain an element for it to be considered common
         
     Returns:
         Tuple of (path to common XML file, list of paths to diff files)
@@ -271,8 +328,8 @@ def find_common_twb_structure(input_dir: str, output_dir: str) -> Tuple[str, Lis
     if not xml_trees:
         raise ValueError(f"No valid TWB files found in {input_dir}")
     
-    # Find common structure
-    common_root = find_common_structure(xml_trees)
+    # Find common structure with threshold
+    common_root = find_common_structure(xml_trees, threshold)
     
     # Save common structure
     common_file_path = os.path.join(output_dir, "common-twb.xml")

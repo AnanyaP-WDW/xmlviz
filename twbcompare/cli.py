@@ -8,7 +8,6 @@ from typing import List, Optional
 
 from twbcompare.utils.xml_analyzer import find_common_twb_structure
 
-
 def main(args: Optional[List[str]] = None) -> int:
     """
     Main entry point for the TWBCompare CLI.
@@ -38,9 +37,22 @@ def main(args: Optional[List[str]] = None) -> int:
         help="Directory to save results"
     )
     
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=1.0,
+        help="Proportion (0.0-1.0) of files that must contain an element for it to be considered common"
+    )
+    
     parsed_args = parser.parse_args(args)
     input_dir = parsed_args.input_dir
     output_dir = parsed_args.output_dir
+    threshold = parsed_args.threshold
+    
+    # Validate threshold
+    if threshold < 0.0 or threshold > 1.0:
+        print("Error: Threshold must be between 0.0 and 1.0")
+        return 1
     
     try:
         # Check if input directory exists
@@ -50,9 +62,10 @@ def main(args: Optional[List[str]] = None) -> int:
         
         # Process all TWB files directly as XML
         print(f"Processing .twb files from '{input_dir}'...")
+        print(f"Using threshold: {threshold} ({int(threshold*100)}%)")
         
         # Find common structure and generate diffs
-        common_file, diff_files = find_common_twb_structure(input_dir, output_dir)
+        common_file, diff_files = find_common_twb_structure(input_dir, output_dir, threshold)
         
         if not diff_files:
             print(f"No .twb files found in '{input_dir}'")
